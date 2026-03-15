@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KDC Skin Clinic — Appointment Chatbot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --rose:#C2185B;--rose-light:#FCE4EC;--rose-mid:#E91E8C;--rose-dark:#880E4F;
+  --bg:#ffffff;--bg2:#f8f8f8;--border:#e0e0e0;--txt:#1a1a1a;--txt2:#666666;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1a1a1a;--bg2:#242424;--border:#333;--txt:#f0f0f0;--txt2:#999}
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg2);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:1rem}
+.app{width:100%;max-width:520px;margin:0 auto}
+.top-nav{display:flex;gap:6px;margin-bottom:0.75rem;background:var(--bg2);border:1px solid var(--border);border-radius:30px;padding:4px}
+.nav-btn{flex:1;padding:8px 10px;border-radius:26px;border:none;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;background:transparent;color:var(--txt2)}
+.nav-btn.active{background:var(--rose);color:#fff}
+.clinic-header{background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:1rem 1.25rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.clinic-header::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:var(--rose-light);opacity:0.35}
+.clinic-logo{width:50px;height:50px;border-radius:14px;background:var(--rose-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;position:relative;z-index:1}
+.clinic-info{position:relative;z-index:1}
+.clinic-info h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.clinic-info p{font-size:12px;color:var(--txt2)}
+.badges{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.badge{padding:3px 9px;border-radius:10px;font-size:11px;font-weight:500}
+.badge.open{background:#E8F5E9;color:#2E7D32}
+.badge.closed{background:#FFEBEE;color:#C62828}
+.badge.star{background:var(--rose-light);color:var(--rose-dark)}
+.badge.queue{background:#FFF8E1;color:#F57F17}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.status-dot.open{background:#4CAF50}.status-dot.closed{background:#F44336}
+
+/* CHAT */
+.chat-view{display:block}
+.msgs-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;min-height:320px;max-height:420px;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:10px;margin-bottom:0.75rem}
+.msgs-box::-webkit-scrollbar{width:3px}
+.msgs-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg{display:flex;gap:7px;align-items:flex-end;animation:up 0.22s ease}
+@keyframes up{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.bot-av{background:var(--rose-light)}.user-av{background:var(--bg);border:1px solid var(--border)}
+.bubble{max-width:80%;padding:9px 13px;font-size:14px;line-height:1.55}
+.bot .bubble{background:var(--bg);border:1px solid var(--border);border-radius:4px 14px 14px 14px;color:var(--txt)}
+.user .bubble{background:var(--rose);color:#fff;border-radius:14px 4px 14px 14px}
+.typing-bbl{background:var(--bg);border:1px solid var(--border);border-radius:4px 14px 14px 14px;padding:10px 14px;display:flex;gap:4px;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--txt2);animation:bbounce 1.1s infinite}
+.dot:nth-child(2){animation-delay:.18s}.dot:nth-child(3){animation-delay:.36s}
+@keyframes bbounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.confirm-card{background:var(--rose-light);border:1px solid #F48FB1;color:var(--rose-dark);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8;margin-top:2px}
+.confirm-card b{color:var(--rose)}
+.queue-card{background:#FFF8E1;border:1px solid #FFE082;color:#5D4037;border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8;margin-top:2px}
+.queue-num{font-family:'Syne',sans-serif;font-size:30px;font-weight:700;color:var(--rose);display:block;line-height:1.2}
+.chips-area{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:0.75rem;min-height:4px}
+.chip{padding:7px 13px;border-radius:20px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);border:1px solid var(--border);color:var(--txt);cursor:pointer;transition:all 0.14s}
+.chip:hover{background:var(--rose-light);border-color:#F48FB1;color:var(--rose-dark)}
+.input-zone{display:flex;gap:8px;align-items:center}
+#inp{flex:1;padding:11px 15px;border-radius:24px;border:1px solid var(--border);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);outline:none;transition:border-color 0.15s}
+#inp:focus{border-color:var(--rose-mid);box-shadow:0 0 0 3px rgba(194,24,91,0.1)}
+.sbtn{width:42px;height:42px;border-radius:50%;background:var(--rose);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.1s}
+.sbtn:hover{transform:scale(1.06)}
+.sbtn svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.cal-slot{padding:9px 4px;text-align:center;border-radius:9px;border:1px solid var(--border);font-size:12.5px;cursor:pointer;background:var(--bg);color:var(--txt);transition:all 0.14s}
+.cal-slot:hover:not(.blocked){background:var(--rose-light);border-color:#F48FB1;color:var(--rose-dark)}
+.cal-slot.blocked{opacity:0.3;cursor:not-allowed;text-decoration:line-through;background:var(--bg2)}
+.section-lbl{font-size:11px;font-weight:500;color:var(--txt2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em}
+.wa-btn{display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;border:none;padding:10px 18px;border-radius:22px;font-size:13.5px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
+.wa-btn:hover{opacity:0.88}
+
+/* ADMIN */
+.admin-view{display:none}
+.admin-login{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:1.75rem;text-align:center}
+.admin-login h3{font-family:'Syne',sans-serif;font-size:17px;color:var(--txt);margin-bottom:4px}
+.admin-login p{font-size:13px;color:var(--txt2);margin-bottom:1.25rem}
+.admin-login input{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);outline:none;margin-bottom:8px}
+.admin-login input:focus{border-color:var(--rose-mid)}
+.login-btn{width:100%;padding:11px;border-radius:10px;background:var(--rose);color:#fff;border:none;font-size:14.5px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:opacity 0.15s}
+.login-btn:hover{opacity:0.9}
+.admin-dashboard{display:none}
+.admin-section{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin-bottom:0.75rem}
+.admin-section h3{font-family:'Syne',sans-serif;font-size:14.5px;font-weight:700;color:var(--txt);margin-bottom:0.75rem}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:13.5px;color:var(--txt)}
+.toggle-sub{font-size:11.5px;color:var(--txt2);margin-top:2px}
+.toggle{position:relative;width:44px;height:25px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:25px;transition:0.2s}
+.slider:before{content:'';position:absolute;width:19px;height:19px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.2s}
+input:checked+.slider{background:var(--rose)}
+input:checked+.slider:before{transform:translateX(19px)}
+.slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:6px}
+.slot-item{padding:7px 4px;text-align:center;border-radius:8px;border:1px solid var(--border);font-size:11.5px;cursor:pointer;background:var(--bg);color:var(--txt);transition:all 0.14s;user-select:none}
+.slot-item.blocked{background:#FFEBEE;border-color:#FFCDD2;color:#C62828;text-decoration:line-through}
+.slot-item:hover{border-color:var(--rose)}
+.save-btn{width:100%;padding:11px;border-radius:10px;background:var(--rose);color:#fff;border:none;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:0.75rem;transition:opacity 0.15s}
+.save-btn:hover{opacity:0.9}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-card{background:var(--bg2);border-radius:10px;padding:11px 13px}
+.stat-card .sval{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;color:var(--rose)}
+.stat-card .slbl{font-size:12px;color:var(--txt2);margin-top:2px}
+.appt-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.appt-item{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--bg2);border-radius:9px;font-size:13px}
+.appt-time{font-weight:500;color:var(--rose);font-family:'Syne',sans-serif;min-width:56px}
+.appt-info{flex:1;color:var(--txt)}
+.appt-info span{color:var(--txt2);font-size:11.5px;display:block}
+.appt-status{padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:500}
+.appt-status.confirmed{background:#E8F5E9;color:#2E7D32}
+.appt-status.pending{background:#FFF8E1;color:#F57F17}
+.logout-btn{width:100%;padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--txt2);font-size:13.5px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:0.5rem;transition:background 0.15s}
+.logout-btn:hover{background:var(--bg2)}
+.hint{font-size:12px;color:var(--txt2);margin-top:8px;padding:7px 11px;background:var(--bg2);border-radius:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-nav">
+    <button class="nav-btn active" onclick="showView('chat')">💬 Patient Chatbot</button>
+    <button class="nav-btn" onclick="showView('admin')">⚙️ Admin Panel</button>
+  </div>
+
+  <div class="clinic-header">
+    <div class="clinic-logo">🌸</div>
+    <div class="clinic-info">
+      <h2>KDC Skin Clinic</h2>
+      <p>Dermatology · Aesthetics · Laser Treatments · Delhi</p>
+      <div class="badges">
+        <span class="badge star">★ 4.9 · 842 reviews</span>
+        <span class="badge open" id="status-badge"><span class="status-dot open" id="status-dot"></span><span id="status-text">Open Today</span></span>
+        <span class="badge queue" id="queue-badge">🕐 Queue: <span id="live-queue">3</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHATBOT -->
+  <div class="chat-view" id="chat-view">
+    <div class="msgs-box" id="msgs"></div>
+    <div class="chips-area" id="chips"></div>
+    <div class="input-zone">
+      <input type="text" id="inp" placeholder="Ask anything about KDC Skin Clinic..." />
+      <button class="sbtn" onclick="sendMsg()">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="admin-view" id="admin-view">
+    <div id="admin-login-screen">
+      <div class="admin-login">
+        <div style="font-size:32px;margin-bottom:10px">🔐</div>
+        <h3>Admin Login</h3>
+        <p>KDC Skin Clinic — Staff Portal</p>
+        <input type="text" id="admin-user" placeholder="Username" />
+        <input type="password" id="admin-pass" placeholder="Password" onkeydown="if(event.key==='Enter')adminLogin()" />
+        <div id="login-err" style="font-size:12.5px;color:#C62828;margin-bottom:10px;display:none">❌ Wrong credentials. Use: admin / kdc123</div>
+        <button class="login-btn" onclick="adminLogin()">Login →</button>
+        <p style="font-size:12px;color:var(--txt2);margin-top:10px">Demo login — username: <b>admin</b> · password: <b>kdc123</b></p>
+      </div>
+    </div>
+
+    <div id="admin-dashboard" class="admin-dashboard">
+      <div class="admin-section">
+        <h3>📊 Today's Overview</h3>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sval" id="stat-total">8</div><div class="slbl">Bookings Today</div></div>
+          <div class="stat-card"><div class="sval" id="stat-queue">3</div><div class="slbl">In Queue Now</div></div>
+          <div class="stat-card"><div class="sval">4.9★</div><div class="slbl">Google Rating</div></div>
+          <div class="stat-card"><div class="sval" id="stat-wait">~25m</div><div class="slbl">Avg Wait Time</div></div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <h3>🏥 Clinic Status Controls</h3>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Clinic Open Today</div><div class="toggle-sub">Turn OFF to mark as holiday or day off</div></div>
+          <label class="toggle"><input type="checkbox" id="tog-open" checked onchange="updateStatus()"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Accepting New Bookings</div><div class="toggle-sub">Turn OFF if fully booked for the day</div></div>
+          <label class="toggle"><input type="checkbox" id="tog-booking" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Doctor Available</div><div class="toggle-sub">Turn OFF if doctor is on leave</div></div>
+          <label class="toggle"><input type="checkbox" id="tog-doctor" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Emergency Patients Only</div><div class="toggle-sub">Only urgent cases will be accepted</div></div>
+          <label class="toggle"><input type="checkbox" id="tog-emergency"><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <h3>🕐 Block / Unblock Time Slots</h3>
+        <p class="section-lbl">Tap any slot to block or unblock it</p>
+        <div class="slot-grid" id="admin-slots"></div>
+        <div class="hint">💡 Blocked slots will NOT appear in patient booking options</div>
+      </div>
+
+      <div class="admin-section">
+        <h3>👥 Live Queue Manager</h3>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="flex:1">
+            <div style="font-size:12.5px;color:var(--txt2);margin-bottom:2px">Patients waiting right now</div>
+            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:700;color:var(--rose)" id="admin-queue-count">3</div>
+          </div>
+          <button onclick="changeQueue(-1)" style="width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:20px;color:var(--txt);transition:background 0.14s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='var(--bg)'">−</button>
+          <button onclick="changeQueue(1)" style="width:38px;height:38px;border-radius:50%;background:var(--rose);border:none;cursor:pointer;font-size:20px;color:#fff">+</button>
+        </div>
+        <div style="font-size:13px;color:var(--txt2);margin-bottom:4px">Estimated wait time per patient:</div>
+        <input type="range" min="5" max="60" value="25" step="5" id="wait-slider" oninput="updateWait(this.value)" style="width:100%;margin:6px 0"/>
+        <div style="font-size:13.5px;font-weight:500;color:var(--rose)" id="wait-display">~25 min per patient</div>
+      </div>
+
+      <div class="admin-section">
+        <h3>📋 Today's Appointments</h3>
+        <div class="appt-list" id="appt-list"></div>
+      </div>
+
+      <div class="admin-section">
+        <h3>📢 Patient Notice Board</h3>
+        <p style="font-size:12.5px;color:var(--txt2);margin-bottom:8px">This message will appear at the top of the chatbot for all patients</p>
+        <textarea id="notice-text" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);font-size:13.5px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);outline:none;resize:none;min-height:80px" placeholder="Example: Doctor is on leave on 20th March. Please book for 21st onwards."></textarea>
+        <button class="save-btn" onclick="saveNotice()">✓ Save &amp; Publish Notice</button>
+      </div>
+
+      <div class="admin-section">
+        <h3>🔐 Account Settings</h3>
+        <p style="font-size:12.5px;color:var(--txt2);margin-bottom:12px">Change your admin username and password anytime</p>
+        <div style="margin-bottom:8px">
+          <label style="font-size:12px;color:var(--txt2);display:block;margin-bottom:4px">Current Password (required to make changes)</label>
+          <input type="password" id="curr-pass" placeholder="Enter current password" style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid var(--border);font-size:13.5px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);outline:none"/>
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="font-size:12px;color:var(--txt2);display:block;margin-bottom:4px">New Username</label>
+          <input type="text" id="new-user" placeholder="Leave blank to keep current" style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid var(--border);font-size:13.5px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);outline:none"/>
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="font-size:12px;color:var(--txt2);display:block;margin-bottom:4px">New Password</label>
+          <input type="password" id="new-pass" placeholder="Leave blank to keep current" style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid var(--border);font-size:13.5px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);outline:none"/>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--txt2);display:block;margin-bottom:4px">Confirm New Password</label>
+          <input type="password" id="conf-pass" placeholder="Re-enter new password" style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid var(--border);font-size:13.5px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);outline:none"/>
+        </div>
+        <div id="pass-msg" style="font-size:12.5px;margin-bottom:8px;display:none;padding:7px 11px;border-radius:8px"></div>
+        <button class="save-btn" onclick="changeCredentials()">🔐 Update Credentials</button>
+        <div class="hint" style="margin-top:8px">💡 After changing credentials, you will be logged out automatically and must log in again with the new details.</div>
+      </div>
+
+      <button class="logout-btn" onclick="adminLogout()">← Logout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SHARED STATE ──────────────────────────────────
+const CREDS = { username: 'admin', password: 'kdc123' };
+
+const STATE = {
+  isOpen: true,
+  acceptBookings: true,
+  doctorAvailable: true,
+  emergency: false,
+  queueCount: 3,
+  waitPerSlot: 25,
+  notice: '',
+  blockedSlots: ['1:00 PM','2:00 PM'],
+  appointments: [
+    {time:'10:00 AM',name:'Priya Sharma',service:'Acne Treatment',status:'confirmed'},
+    {time:'11:00 AM',name:'Rahul Gupta',service:'Laser Hair Removal',status:'confirmed'},
+    {time:'12:00 PM',name:'Sneha Verma',service:'Skin Consultation',status:'pending'},
+    {time:'3:00 PM',name:'Amit Singh',service:'Chemical Peel',status:'confirmed'},
+    {time:'4:00 PM',name:'Neha Joshi',service:'PRP Therapy',status:'pending'},
+  ]
+};
+
+const ALL_SLOTS=['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM',
+  '12:00 PM','12:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+  '4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM'];
+
+const SERVICES=['✨ Skin Consultation','🌿 Acne Treatment','💆 Chemical Peel',
+  '🔬 PRP Therapy','🪒 Laser Hair Removal','💉 Botox / Fillers',
+  '☀️ Pigmentation Treatment','🌸 HydraFacial','💊 Dermatologist Checkup'];
+
+const PRICING={
+  '✨ Skin Consultation':'₹500 – ₹1,000\nIncludes full skin analysis & treatment plan',
+  '🌿 Acne Treatment':'₹1,500 – ₹5,000 per session\nMultiple sessions recommended',
+  '💆 Chemical Peel':'₹2,000 – ₹8,000 per session\nDepends on peel type & depth',
+  '🔬 PRP Therapy':'₹5,000 – ₹15,000 per session\nHair & skin rejuvenation',
+  '🪒 Laser Hair Removal':'₹2,000 – ₹10,000 per session\nPrice depends on body area',
+  '💉 Botox / Fillers':'₹8,000 – ₹25,000\nDepends on units & treatment area',
+  '☀️ Pigmentation Treatment':'₹3,000 – ₹10,000 per session',
+  '🌸 HydraFacial':'₹3,500 – ₹7,000 per session',
+  '💊 Dermatologist Checkup':'₹500 – ₹1,500'
+};
+
+const DATE_OPTS=['Today','Tomorrow','This Saturday','This Sunday',
+  'Next Monday','Next Tuesday','Choose a date'];
+
+// ── VIEW SWITCHING ────────────────────────────────
+function showView(v){
+  document.getElementById('chat-view').style.display = v==='chat'?'block':'none';
+  document.getElementById('admin-view').style.display = v==='admin'?'block':'none';
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>
+    b.classList.toggle('active', i===(v==='chat'?0:1)));
+}
+
+// ── ADMIN ─────────────────────────────────────────
+function adminLogin(){
+  const u=document.getElementById('admin-user').value.trim();
+  const p=document.getElementById('admin-pass').value.trim();
+  if(u===CREDS.username && p===CREDS.password){
+    document.getElementById('admin-login-screen').style.display='none';
+    document.getElementById('admin-dashboard').style.display='block';
+    renderAdminSlots(); renderAppointments();
+  } else {
+    document.getElementById('login-err').style.display='block';
+  }
+}
+function adminLogout(){
+  document.getElementById('admin-login-screen').style.display='block';
+  document.getElementById('admin-dashboard').style.display='none';
+  document.getElementById('admin-user').value='';
+  document.getElementById('admin-pass').value='';
+  document.getElementById('login-err').style.display='none';
+}
+function showPassMsg(msg, isError){
+  const el=document.getElementById('pass-msg');
+  el.style.display='block';
+  el.textContent=msg;
+  el.style.background=isError?'#FFEBEE':'#E8F5E9';
+  el.style.color=isError?'#C62828':'#2E7D32';
+}
+function changeCredentials(){
+  const curr=document.getElementById('curr-pass').value.trim();
+  const newU=document.getElementById('new-user').value.trim();
+  const newP=document.getElementById('new-pass').value.trim();
+  const confP=document.getElementById('conf-pass').value.trim();
+  if(!curr){ showPassMsg('❌ Please enter your current password.', true); return; }
+  if(curr!==CREDS.password){ showPassMsg('❌ Current password is incorrect.', true); return; }
+  if(newP && newP!==confP){ showPassMsg('❌ New passwords do not match.', true); return; }
+  if(newP && newP.length<4){ showPassMsg('❌ New password must be at least 4 characters.', true); return; }
+  if(!newU && !newP){ showPassMsg('⚠️ Nothing to update — enter a new username or password.', true); return; }
+  if(newU) CREDS.username=newU;
+  if(newP) CREDS.password=newP;
+  showPassMsg('✅ Credentials updated! Logging you out now...', false);
+  document.getElementById('login-err').textContent='Login with your new credentials below.';
+  setTimeout(()=>{
+    document.getElementById('curr-pass').value='';
+    document.getElementById('new-user').value='';
+    document.getElementById('new-pass').value='';
+    document.getElementById('conf-pass').value='';
+    document.getElementById('pass-msg').style.display='none';
+    adminLogout();
+  }, 2000);
+}
+function updateStatus(){
+  STATE.isOpen = document.getElementById('tog-open').checked;
+  const badge=document.getElementById('status-badge');
+  const dot=document.getElementById('status-dot');
+  const txt=document.getElementById('status-text');
+  if(STATE.isOpen){
+    badge.className='badge open'; dot.className='status-dot open'; txt.textContent='Open Today';
+  } else {
+    badge.className='badge closed'; dot.className='status-dot closed'; txt.textContent='Closed Today';
+  }
+}
+function changeQueue(d){
+  STATE.queueCount = Math.max(0, STATE.queueCount+d);
+  document.getElementById('admin-queue-count').textContent = STATE.queueCount;
+  document.getElementById('live-queue').textContent = STATE.queueCount;
+  document.getElementById('stat-queue').textContent = STATE.queueCount;
+  document.getElementById('stat-wait').textContent = '~'+(STATE.queueCount*STATE.waitPerSlot)+'m';
+}
+function updateWait(v){
+  STATE.waitPerSlot = parseInt(v);
+  document.getElementById('wait-display').textContent = '~'+v+' min per patient';
+  document.getElementById('stat-wait').textContent = '~'+(STATE.queueCount*parseInt(v))+'m';
+}
+function renderAdminSlots(){
+  const grid=document.getElementById('admin-slots'); grid.innerHTML='';
+  ALL_SLOTS.forEach(slot=>{
+    const d=document.createElement('div');
+    d.className='slot-item'+(STATE.blockedSlots.includes(slot)?' blocked':'');
+    d.textContent=slot;
+    d.onclick=()=>{
+      if(STATE.blockedSlots.includes(slot))
+        STATE.blockedSlots=STATE.blockedSlots.filter(s=>s!==slot);
+      else STATE.blockedSlots.push(slot);
+      renderAdminSlots();
+    };
+    grid.appendChild(d);
+  });
+}
+function renderAppointments(){
+  const list=document.getElementById('appt-list'); list.innerHTML='';
+  STATE.appointments.forEach(a=>{
+    const d=document.createElement('div'); d.className='appt-item';
+    d.innerHTML=`<div class="appt-time">${a.time}</div>
+      <div class="appt-info">${a.name}<span>${a.service}</span></div>
+      <div class="appt-status ${a.status}">${a.status}</div>`;
+    list.appendChild(d);
+  });
+}
+function saveNotice(){
+  STATE.notice=document.getElementById('notice-text').value.trim();
+  const btn=document.querySelector('.save-btn');
+  btn.textContent='✓ Published!'; btn.style.background='#2E7D32';
+  setTimeout(()=>{ btn.textContent='✓ Save & Publish Notice'; btn.style.background=''; },2500);
+}
+
+// ── CHATBOT ───────────────────────────────────────
+let cstep=0;
+let booking={name:'',service:'',date:'',time:'',phone:''};
+
+function getAvailableSlots(){ return ALL_SLOTS.filter(s=>!STATE.blockedSlots.includes(s)); }
+
+function addMsg(role, text, extra){
+  const box=document.getElementById('msgs');
+  const div=document.createElement('div'); div.className='msg '+role;
+  const av=document.createElement('div');
+  av.className='av '+(role==='bot'?'bot-av':'user-av');
+  av.textContent=role==='bot'?'🌸':'👤';
+  const bbl=document.createElement('div'); bbl.className='bubble';
+  bbl.innerHTML=text.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  if(role==='bot'){ div.appendChild(av); div.appendChild(bbl); }
+  else { div.appendChild(bbl); div.appendChild(av); }
+  box.appendChild(div);
+  if(extra) box.appendChild(extra);
+  box.scrollTop=box.scrollHeight;
+}
+function showTyping(cb){
+  const box=document.getElementById('msgs');
+  const div=document.createElement('div'); div.className='msg bot'; div.id='typing-ind';
+  const av=document.createElement('div'); av.className='av bot-av'; av.textContent='🌸';
+  const t=document.createElement('div'); t.className='typing-bbl';
+  t.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  div.appendChild(av); div.appendChild(t);
+  box.appendChild(div); box.scrollTop=box.scrollHeight;
+  setTimeout(()=>{ const el=document.getElementById('typing-ind'); if(el)el.remove(); cb(); }, 850);
+}
+function setChips(arr, isGrid){
+  const c=document.getElementById('chips'); c.innerHTML='';
+  if(isGrid){
+    const wrap=document.createElement('div'); wrap.style.width='100%';
+    const lbl=document.createElement('div'); lbl.className='section-lbl';
+    lbl.textContent='Available time slots';
+    const grid=document.createElement('div'); grid.className='cal-grid';
+    arr.forEach(s=>{
+      const btn=document.createElement('div');
+      btn.className='cal-slot'+(STATE.blockedSlots.includes(s)?' blocked':'');
+      btn.textContent=s;
+      if(!STATE.blockedSlots.includes(s))
+        btn.onclick=()=>{ document.getElementById('inp').value=s; sendMsg(); };
+      grid.appendChild(btn);
+    });
+    wrap.appendChild(lbl); wrap.appendChild(grid); c.appendChild(wrap);
+  } else {
+    arr.forEach(l=>{
+      const b=document.createElement('button'); b.className='chip'; b.textContent=l;
+      b.onclick=()=>{ document.getElementById('inp').value=l; sendMsg(); };
+      c.appendChild(b);
+    });
+  }
+}
+function sendMsg(){
+  const inp=document.getElementById('inp');
+  const val=inp.value.trim(); if(!val) return;
+  addMsg('user',val); inp.value=''; setChips([]);
+  showTyping(()=>handleChat(val));
+}
+document.getElementById('inp').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMsg(); });
+
+function handleChat(val){
+  const lv=val.toLowerCase();
+
+  if(!STATE.isOpen){
+    addMsg('bot','Sorry, **KDC Skin Clinic is closed today**. 😔\n\n'+(STATE.notice||'Please check back tomorrow or call to reschedule.')+'\n\nNeed anything else?');
+    setChips(['📅 Book for Another Day','📞 Contact Us','🔄 Start Over']); return;
+  }
+  if(!STATE.acceptBookings && (lv.includes('book')||lv.includes('appoint'))){
+    addMsg('bot','We\'re fully booked for today! 😔 Would you like to book for tomorrow instead?');
+    setChips(['📅 Book for Tomorrow','📞 Call Us','🔄 Start Over']); return;
+  }
+
+  if(cstep===0){
+    if(STATE.notice) addMsg('bot','📢 **Notice from Clinic:** '+STATE.notice);
+    if(lv.includes('book')||lv.includes('appoint')||lv.includes('slot')){
+      cstep=1;
+      addMsg('bot','Of course! Which treatment are you looking for? 🌸');
+      setChips(SERVICES);
+    } else if(lv.includes('queue')||lv.includes('wait')||lv.includes('how long')||lv.includes('waiting')){
+      const totalWait=STATE.queueCount*STATE.waitPerSlot;
+      const qcard=document.createElement('div'); qcard.className='queue-card';
+      qcard.innerHTML='<span class="queue-num">'+STATE.queueCount+'</span>patients currently waiting<br>⏱️ Estimated wait: <b>~'+totalWait+' minutes</b><br><br>💡 <b>Tip:</b> Book an appointment to skip the walk-in queue!';
+      addMsg('bot','Here\'s the live queue status right now:',qcard);
+      setChips(['📅 Book Appointment','🔄 Start Over']);
+    } else if(lv.includes('price')||lv.includes('cost')||lv.includes('fee')||lv.includes('rate')||lv.includes('charges')){
+      addMsg('bot','Which treatment pricing would you like to know? 💰');
+      setChips(SERVICES); cstep=0.5;
+    } else if(lv.includes('location')||lv.includes('address')||lv.includes('where')||lv.includes('hours')||lv.includes('timing')){
+      addMsg('bot','📍 **Address:** KDC Skin Clinic, Delhi\n⏰ **Hours:** Monday – Saturday, 9:00 AM – 8:00 PM\n📞 **Phone:** Contact clinic directly\n⭐ **Rating:** 4.9/5 stars (842 reviews)');
+      setChips(['📅 Book Appointment','🔄 Start Over']);
+    } else if(lv.includes('contact')||lv.includes('call')||lv.includes('phone')||lv.includes('number')){
+      addMsg('bot','📞 Please call KDC Skin Clinic directly or send a WhatsApp message. Would you like to book an appointment online instead?');
+      setChips(['📅 Book Appointment Now','🔄 Start Over']);
+    } else if(lv.includes('doctor')){
+      const docStatus=STATE.doctorAvailable
+        ?'✅ Yes, the doctor is available today! Would you like to book an appointment?'
+        :'❌ The doctor is not available today. Please book for another day or call us.';
+      addMsg('bot',docStatus);
+      setChips(['📅 Book Appointment','🔄 Start Over']);
+    } else {
+      addMsg('bot','Hello! 👋 Welcome to **KDC Skin Clinic**.\n\n⭐ 4.9 stars · 842 reviews · No more waiting in queues!\n\nHow can I help you today?');
+      setChips(['📅 Book Appointment','🕐 Check Queue & Wait Time','💰 Services & Pricing','📍 Location & Hours','🩺 Is Doctor Available Today?']);
+    }
+  } else if(cstep===0.5){
+    const match=Object.keys(PRICING).find(k=>
+      val.includes(k.replace(/^[^\s]+ /,'').split(' ')[0]) || k.includes(val.split(' ').slice(-1)[0])
+    );
+    const info=PRICING[val]||PRICING[match];
+    if(info){
+      addMsg('bot','**'+val+'**\n\n'+info+'\n\n*Final pricing confirmed after consultation. CGHS/insurance packages may apply.*');
+      setChips(['📅 Book This Treatment','💰 Check Other Prices','🔄 Start Over']); cstep=0.6;
+    } else {
+      addMsg('bot','Please select a treatment to see pricing:'); setChips(SERVICES);
+    }
+  } else if(cstep===0.6){
+    if(lv.includes('book')||lv.includes('yes')){
+      cstep=1; addMsg('bot','Which treatment would you like to book?'); setChips(SERVICES);
+    } else if(lv.includes('other')||lv.includes('check')){
+      cstep=0.5; addMsg('bot','Which service pricing would you like?'); setChips(SERVICES);
+    } else {
+      cstep=0;
+      addMsg('bot','How else can I help you?');
+      setChips(['📅 Book Appointment','💰 Services & Pricing','📍 Location & Hours']);
+    }
+  } else if(cstep===1){
+    booking.service=val; cstep=2;
+    addMsg('bot','Great choice! 👍 Which date works best for you?');
+    setChips(DATE_OPTS);
+  } else if(cstep===2){
+    if(lv.includes('choose')||lv.includes('date')){
+      addMsg('bot','Please type your preferred date (e.g. 20 March or 22/03):');
+      cstep=2.5; setChips([]);
+    } else {
+      booking.date=val; cstep=3;
+      addMsg('bot','Here are the available time slots for **'+val+'**:');
+      setChips(getAvailableSlots(), true);
+    }
+  } else if(cstep===2.5){
+    booking.date=val; cstep=3;
+    addMsg('bot','Choose your preferred time slot:');
+    setChips(getAvailableSlots(), true);
+  } else if(cstep===3){
+    booking.time=val; cstep=4;
+    const totalWait=(STATE.queueCount+1)*STATE.waitPerSlot;
+    addMsg('bot','📌 Slot confirmed: **'+val+'**\n\nEstimated wait from arrival: **~'+totalWait+' min** (based on current queue of '+STATE.queueCount+' patients).\n\nWhat\'s your full name?');
+    setChips([]);
+  } else if(cstep===4){
+    booking.name=val; cstep=5;
+    addMsg('bot','Nice to meet you, **'+val.split(' ')[0]+'**! 😊\n\nWhat\'s your mobile number so the clinic can confirm?');
+    setChips([]);
+  } else if(cstep===5){
+    booking.phone=val; cstep=6;
+    const card=document.createElement('div'); card.className='confirm-card';
+    card.innerHTML='🌸 <b>Appointment Summary — KDC Skin Clinic</b><br><br>'
+      +'👤 <b>Name:</b> '+booking.name+'<br>'
+      +'💆 <b>Treatment:</b> '+booking.service+'<br>'
+      +'📅 <b>Date:</b> '+booking.date+'<br>'
+      +'🕐 <b>Time:</b> '+booking.time+'<br>'
+      +'📞 <b>Phone:</b> '+booking.phone+'<br><br>'
+      +'<span style="font-size:12px;opacity:0.8">The clinic will call you within 1 hour to confirm.</span>';
+    addMsg('bot','Here\'s your booking summary — please confirm:',card);
+    const wa=makeWaBtn(); addMsg('bot','',wa);
+    STATE.appointments.push({
+      time:booking.time, name:booking.name,
+      service:booking.service.replace(/^[^\s]+ /,''), status:'pending'
+    });
+    STATE.queueCount++;
+    document.getElementById('live-queue').textContent=STATE.queueCount;
+    document.getElementById('stat-total').textContent=STATE.appointments.length;
+    setChips(['✅ Confirm Booking','✏️ Change Details','🔄 Start Over']);
+  } else if(cstep===6){
+    if(lv.includes('confirm')||lv.includes('yes')){
+      addMsg('bot','✅ **Booking Confirmed!**\n\nSee you on **'+booking.date+'** at **'+booking.time+'**, '+booking.name.split(' ')[0]+'! 🌸\n\nA reminder will be sent before your appointment. Thank you for choosing KDC Skin Clinic!');
+      setChips(['🔄 Book Another Appointment']); cstep=99;
+    } else if(lv.includes('change')||lv.includes('edit')){
+      booking={name:'',service:'',date:'',time:'',phone:''};
+      cstep=1; addMsg('bot','No problem! Let\'s start again. Which treatment?'); setChips(SERVICES);
+    } else {
+      booking={name:'',service:'',date:'',time:'',phone:''}; cstep=0;
+      addMsg('bot','No worries! How can I help you?');
+      setChips(['📅 Book Appointment','🕐 Check Queue','💰 Pricing','📍 Location']);
+    }
+  } else {
+    booking={name:'',service:'',date:'',time:'',phone:''}; cstep=0;
+    addMsg('bot','Welcome back! 👋 How can I help?');
+    setChips(['📅 Book Appointment','🕐 Check Queue & Wait Time','💰 Services & Pricing','📍 Location & Hours']);
+  }
+}
+
+function makeWaBtn(){
+  const wa=document.createElement('button'); wa.className='wa-btn';
+  const msg=encodeURIComponent(
+    'Hello KDC Skin Clinic! I\'d like to book an appointment.\n\n'
+    +'Name: '+booking.name+'\nTreatment: '+booking.service
+    +'\nDate: '+booking.date+'\nTime: '+booking.time+'\nPhone: '+booking.phone
+  );
+  wa.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>Confirm via WhatsApp';
+  wa.onclick=()=>window.open('https://wa.me/?text='+msg,'_blank');
+  return wa;
+}
+
+// INIT
+setTimeout(()=>{
+  addMsg('bot','Hello! 👋 Welcome to **KDC Skin Clinic**.\n\n⭐ 4.9 stars · 842 reviews · No more waiting in long queues!\n\nHow can I help you today?');
+  setChips(['📅 Book Appointment','🕐 Check Queue & Wait Time','💰 Services & Pricing','📍 Location & Hours','🩺 Is Doctor Available Today?']);
+}, 400);
+</script>
+</body>
+</html>
